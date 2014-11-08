@@ -7,3 +7,4 @@ project/boot
 project.vim
 *.old
 .idea
+fpinscala.iml
