@@ -34,11 +34,13 @@ object List { // `List` companion object. Contains functions for creating and wo
       case Cons(h,t) => Cons(h, append(t, a2))
     }
 
-  def foldRight[A,B](as: List[A], z: B)(f: (A, B) => B): B = // Utility functions
-    as match {
-      case Nil => z
-      case Cons(x, xs) => f(x, foldRight(xs, z)(f))
-    }
+//  def foldRight[A,B](as: List[A], z: B)(f: (A, B) => B): B = // Utility functions
+//    as match {
+//      case Nil => z
+//      case Cons(x, xs) => f(x, foldRight(xs, z)(f))
+//    }
+
+  def foldRight[A,B](as: List[A], z: B)(f: (A, B) => B): B = foldLeft(as, z)((b,a) => f(a,b))
   
   def sum2(ns: List[Int]) = 
     foldRight(ns, 0)((x,y) => x + y)
@@ -62,13 +64,31 @@ object List { // `List` companion object. Contains functions for creating and wo
     case Cons(x, xs) => if(n<=0){l}else{drop(xs, n-1)}
   }
 
-  def dropWhile[A](l: List[A], f: A => Boolean): List[A] = sys.error("todo")
+  def dropWhile[A](l: List[A], f: A => Boolean): List[A] = l match {
+    case Cons(head, tail) if(f(head)) => dropWhile(tail, f)
+    case _ => l
+  }
 
   def init[A](l: List[A]): List[A] = sys.error("todo")
 
-  def length[A](l: List[A]): Int = sys.error("todo")
+  def length[A](l: List[A]): Int = foldRight(l, 0)((x, y) => 1 + y)
 
-  def foldLeft[A,B](l: List[A], z: B)(f: (B, A) => B): B = sys.error("todo")
+  def foldLeft[A,B](l: List[A], z: B)(f: (B, A) => B): B = l match {
+    case Nil => z
+    case Cons(head, tail) => foldLeft(tail, f(z, head))(f)
+  }
+
+//  def foldLeftViaFoldRight[A,B](l: List[A], z: B)(f: (B,A) => B): B = foldRight(l, z)((a, b) => f(b, a))
+
+  def sum3(ns: List[Int]) = foldLeft(ns, 0)(_ + _)
+  def product3(ns: List[Double]) = foldLeft(ns, 1.0)(_ * _)
+  def length3(ns: List[Int]) = foldLeft(ns, 0)((b, a) => 1 + b)
+
+  def reverse[A](xs : List[A]) : List[A] = foldLeft(xs, Nil : List[A]){ (acc, elem) => Cons(elem, acc) }
+
+  def append2[A](l : List[A], x : List[A]) : List[A] = foldLeft(reverse(l), x){ (acc, elem) => Cons(elem, acc) }
+
+  def concat[A](ll : List[List[A]]) : List[A] = foldLeft(reverse(ll), Nil: List[A]){(acc, l) => append2(l, acc)}
 
   def map[A,B](l: List[A])(f: A => B): List[B] = sys.error("todo")
 }
