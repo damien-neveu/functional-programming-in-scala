@@ -90,5 +90,29 @@ object List { // `List` companion object. Contains functions for creating and wo
 
   def concat[A](ll : List[List[A]]) : List[A] = foldLeft(reverse(ll), Nil: List[A]){(acc, l) => append2(l, acc)}
 
-  def map[A,B](l: List[A])(f: A => B): List[B] = sys.error("todo")
+  def incr(xs : List[Int]) : List[Int] = foldLeft(reverse(xs), Nil : List[Int]){(acc, elem) => Cons(elem+1, acc)}
+
+  def dblToStr(xs : List[Double]) : List[String] = foldLeft(reverse(xs), Nil : List[String]){(acc, elem) => Cons(elem.toString, acc)}
+
+  def map[A,B](l: List[A])(f: A => B): List[B] = foldLeft(reverse(l), Nil : List[B]){(acc, elem) => Cons(f(elem), acc)}
+
+  def filter[A](as: List[A])(f: A => Boolean): List[A] = foldLeft(reverse(as), Nil: List[A]){(acc, elem) => if(f(elem)){Cons(elem, acc)}else{acc}}
+
+  def flatMap[A,B](as: List[A])(f: A => List[B]): List[B] = concat(map(as)(f))
+
+  def filter2[A](as: List[A])(f: A => Boolean): List[A] = flatMap(as){a => if(f(a)){List(a)}else{Nil}}
+
+  def aggr(xs : List[Int], ys : List[Int]) : List[Int] = (xs, ys) match {
+    case (Nil, _) => Nil
+    case (_, Nil) => Nil
+    case (Cons(xHead, xTail), Cons(yHead, yTail)) => Cons(xHead + yHead, aggr(xTail, yTail))
+  }
+
+  def zipWith[A](xs : List[A], ys : List[A])(f : (A,A) => A) : List[A] = (xs, ys) match {
+    case (Nil, _) => Nil
+    case (_, Nil) => Nil
+    case (Cons(xHead, xTail), Cons(yHead, yTail)) => Cons(f(xHead,yHead), zipWith(xTail, yTail)(f))
+  }
+  
+
 }
