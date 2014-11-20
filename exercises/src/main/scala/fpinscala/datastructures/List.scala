@@ -8,7 +8,7 @@ object List { // `List` companion object. Contains functions for creating and wo
   def sum(ints: List[Int]): Int = ints match { // A function that uses pattern matching to add up a list of integers
     case Nil => 0 // The sum of the empty list is 0.
     case Cons(x,xs) => x + sum(xs) // The sum of a list starting with `x` is `x` plus the sum of the rest of the list.
-  } 
+  }
   
   def product(ds: List[Double]): Double = ds match {
     case Nil => 1.0
@@ -113,6 +113,16 @@ object List { // `List` companion object. Contains functions for creating and wo
     case (_, Nil) => Nil
     case (Cons(xHead, xTail), Cons(yHead, yTail)) => Cons(f(xHead,yHead), zipWith(xTail, yTail)(f))
   }
-  
+
+  def hasSubsequence[A](sup : List[A], sub : List[A]) : Boolean = {
+    def internal(theSup : List[A], theSub : List[A]) : Boolean = (theSup,theSub) match {
+      case (_, Nil) => true
+      case (Cons(supHead, supTail), Cons(subHead, subTail)) => if(supHead==subHead){internal(supTail,subTail)}else{false}
+    }
+    sup match {
+      case Nil => false
+      case Cons(head, tail) => if(internal(sup, sub)){true}else{hasSubsequence(tail, sub)}
+    }
+  }
 
 }
