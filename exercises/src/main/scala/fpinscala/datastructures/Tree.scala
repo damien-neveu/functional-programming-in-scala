@@ -8,6 +8,11 @@ case class Branch[A](left: Tree[A], right: Tree[A]) extends Tree[A]
 object Tree {
 
   // usage : Tree.size( Branch( Branch( Branch(Leaf(7),Leaf(1)) , Branch(Leaf(5),Leaf(10)) ), Branch(Branch(Branch(Leaf(9),Leaf(12)), Branch(Leaf(15),Leaf(3))) , Branch(Leaf(1), Leaf(11))) ) )
+  //                          X
+  //                X                   X
+  //            X       X           X         X
+  //          7   1  5    10    X       X   1    11
+  //                          9   12 15   3
   def size[A](tree : Tree[A]) : Int = tree match {
     case Leaf(v) => 1
     case Branch(l, r) => 1 + size(l) + size(r)
