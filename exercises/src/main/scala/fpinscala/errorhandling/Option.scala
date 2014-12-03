@@ -53,9 +53,29 @@ object Option {
 
   def variance(xs: Seq[Double]): Option[Double] = mean(xs).flatMap{theMean => mean(xs.map{x => math.pow(x-theMean,2)})}
 
-  def map2[A,B,C](a: Option[A], b: Option[B])(f: (A, B) => C): Option[C] = sys.error("todo")
+  def map2[A,B,C](a: Option[A], b: Option[B])(f: (A, B) => C): Option[C] = for {
+    aa <- a
+    bb <- b
+  } yield (f(aa, bb))
 
-  def sequence[A](a: List[Option[A]]): Option[List[A]] = sys.error("todo")
+  def sequence[A](a: List[Option[A]]): Option[List[A]] = {
+    def internal(aa : List[Option[A]], ax : List[A]) : List[A] = aa match {
+      case Nil => ax
+      case None::tail => Nil
+      case Some(v)::tail => internal(tail, v::ax)
+    }
+    val extractedAs = internal(a, List()).reverse
+    if(!extractedAs.isEmpty){Some(extractedAs)}else{None}
+  }
 
-  def traverse[A, B](a: List[A])(f: A => Option[B]): Option[List[B]] = sys.error("todo")
+  def sequence2[A](a: List[Option[A]]): Option[List[A]] = a match {
+    case Nil => Some(Nil)
+    case optHead::optTail => optHead flatMap {head => map2( optHead, sequence2(optTail) )(_::_)}
+  }
+
+  def traverse[A, B](a: List[A])(f: A => Option[B]): Option[List[B]] = a match {
+    case Nil => Some(Nil)
+    case h::t => map2(f(h), traverse(t)(f))(_::_)
+  }
+
 }
