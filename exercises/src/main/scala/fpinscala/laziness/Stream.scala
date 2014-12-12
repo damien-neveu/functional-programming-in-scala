@@ -17,9 +17,21 @@ trait Stream[+A] {
     case Empty => None
     case Cons(h, t) => if (f(h())) Some(h()) else t().find(f)
   }
-  def take(n: Int): Stream[A] = sys.error("todo")
 
-  def drop(n: Int): Stream[A] = sys.error("todo")
+  def toList : List[A] = this match {
+    case Empty => Nil
+    case Cons(h, t) => h()::t().toList
+  }
+
+  def take(n: Int): Stream[A] = this match {
+    case Cons(h, t) if (n>0) => Cons(h, () => t().take(n-1))
+    case _ => Empty
+  }
+
+  def drop(n: Int): Stream[A] = this match {
+    case Cons(h, t) if (n>0) => t().drop(n-1)
+    case s: Stream[A] => s
+  }
 
   def takeWhile(p: A => Boolean): Stream[A] = sys.error("todo")
 
