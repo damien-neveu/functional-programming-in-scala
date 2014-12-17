@@ -33,9 +33,14 @@ trait Stream[+A] {
     case s: Stream[A] => s
   }
 
-  def takeWhile(p: A => Boolean): Stream[A] = sys.error("todo")
+  def takeWhile(p: A => Boolean): Stream[A] = this match {
+    case Cons(h, t) if (p(h())) => Stream.cons(h(), t().takeWhile(p))
+    case s: Stream[A] => Empty
+  }
 
-  def forAll(p: A => Boolean): Boolean = sys.error("todo")
+  def takeWhile2(p: A => Boolean): Stream[A] = foldRight(Empty : Stream[A]){ (a, b) => if(p(a)){Stream.cons(a, b)}else{Stream.empty} }
+
+  def forAll(p: A => Boolean): Boolean = foldRight(true){(a, b) => p(a) && b}
 
   def startsWith[B](s: Stream[B]): Boolean = sys.error("todo")
 }
@@ -56,7 +61,7 @@ object Stream {
     else cons(as.head, apply(as.tail: _*))
 
   val ones: Stream[Int] = Stream.cons(1, ones)
-  def from(n: Int): Stream[Int] = sys.error("todo")
+  def from(n: Int): Stream[Int] = Stream.cons(n, from(n+1))
 
   def unfold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] = sys.error("todo")
 }
