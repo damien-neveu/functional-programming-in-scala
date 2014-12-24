@@ -24,7 +24,7 @@ trait Applicative[F[_]] extends Functor[F] {
 
   def replicateM[A](n: Int, fa: F[A]): F[List[A]] = ???
 
-  def factor[A,B](fa: F[A], fb: F[A]): F[(A,B)] = ???
+  def factor[A,B](fa: F[A], fb: F[B]): F[(A,B)] = ???
 
   def product[G[_]](G: Applicative[G]): Applicative[({type f[x] = (F[x], G[x])})#f] = ???
 
@@ -118,7 +118,7 @@ trait Traverse[F[_]] extends Functor[F] with Foldable[F] {
   def mapAccum[S,A,B](fa: F[A], s: S)(f: (A, S) => (B, S)): (F[B], S) =
     traverseS(fa)((a: A) => (for {
       s1 <- get[S]
-      (b, s2) = f(a, s)
+      (b, s2) = f(a, s1)
       _  <- set(s2)
     } yield b)).run(s)
 
