@@ -1,6 +1,7 @@
 package fpinscala.laziness
 
 import Stream._
+
 trait Stream[+A] {
 
   def foldRight[B](z: => B)(f: (A, => B) => B): B = // The arrow `=>` in front of the argument type `B` means that the function `f` takes its second argument by name and may choose not to evaluate it.
@@ -41,6 +42,16 @@ trait Stream[+A] {
   def takeWhile2(p: A => Boolean): Stream[A] = foldRight(Empty : Stream[A]){ (a, b) => if(p(a)){Stream.cons(a, b)}else{Stream.empty} }
 
   def forAll(p: A => Boolean): Boolean = foldRight(true){(a, b) => p(a) && b}
+
+  def map[B](f : A => B): Stream[B] = foldRight(Empty: Stream[B]){ (a, b) => Stream.cons(f(a), b) }
+
+  def filter(p : A => Boolean): Stream[A] = foldRight(Empty: Stream[A])( (h, t) => if(p(h)){Stream.cons(h, t)}else{t} )
+
+  def append[B>:A](s2: => Stream[B]): Stream[B] = foldRight(s2)( (h, t) => Stream.cons(h, t) )
+
+  def flatMap[B](f: A => Stream[B]): Stream[B] = foldRight(Empty: Stream[B])( (h, t) => f(h) append(t) )
+
+  def headOption : Option[A] = foldRight(None: Option[A])( (h, t) => Some(h) )
 
   def startsWith[B](s: Stream[B]): Boolean = sys.error("todo")
 }
