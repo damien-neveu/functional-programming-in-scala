@@ -74,5 +74,20 @@ object Stream {
   val ones: Stream[Int] = Stream.cons(1, ones)
   def from(n: Int): Stream[Int] = Stream.cons(n, from(n+1))
 
-  def unfold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] = sys.error("todo")
+  def constant[A](a : A) : Stream[A] = Stream.cons(a, constant(a))
+
+  def fibs : Stream[Int] = {
+    def internalFibs(n_2: Int, n_1 : Int) : Stream[Int] = Stream.cons(n_2+n_1, internalFibs(n_1, n_2+n_1))
+    Stream.cons(0, Stream.cons(1, internalFibs(0, 1)))
+  }
+
+  def unfold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] = f(z) match {
+    case None => Empty
+    case Some( (a, s) ) => Stream.cons(a, unfold(s)(f))
+  }
+
+  def from2(n : Int) : Stream[Int] = unfold(n)( s => Some(n, n+1) )
+  def constant2[A](a : A) : Stream[A] = unfold(a)( s => Some(a, a) )
+  def fibs2 : Stream[Int] = Stream.cons(0, Stream.cons(1, unfold( (0,1) )( s => Some(s._1 + s._2, (s._2, s._1+s._2)) ) ))
+
 }
