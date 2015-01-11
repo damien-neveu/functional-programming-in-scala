@@ -10,6 +10,11 @@ trait Stream[+A] {
       case _ => z
     }
 
+  def scanRight[B](z: => B)(f: (Stream[A], => B) => B): Stream[B] = this match {
+    case Empty => Stream[B](z)
+    case Cons(h, t) => Stream.cons(f(this, z), t().scanRight(z)(f))
+  }
+
   def exists(p: A => Boolean): Boolean = 
     foldRight(false)((a, b) => p(a) || b) // Here `b` is the unevaluated recursive step that folds the tail of the stream. If `p(a)` returns `true`, `b` will never be evaluated and the computation terminates early.
 
@@ -30,12 +35,12 @@ trait Stream[+A] {
   }
 
   def drop(n: Int): Stream[A] = this match {
-    case Cons(h, t) if (n>0) => t().drop(n-1)
+    case Cons(h, t) if n>0 => t().drop(n-1)
     case s: Stream[A] => s
   }
 
   def takeWhile(p: A => Boolean): Stream[A] = this match {
-    case Cons(h, t) if (p(h())) => Stream.cons(h(), t().takeWhile(p))
+    case Cons(h, t) if p(h()) => Stream.cons(h(), t().takeWhile(p))
     case s: Stream[A] => Empty
   }
 
@@ -49,11 +54,18 @@ trait Stream[+A] {
 
   def append[B>:A](s2: => Stream[B]): Stream[B] = foldRight(s2)( (h, t) => Stream.cons(h, t) )
 
-  def flatMap[B](f: A => Stream[B]): Stream[B] = foldRight(Empty: Stream[B])( (h, t) => f(h) append(t) )
+  def flatMap[B](f: A => Stream[B]): Stream[B] = foldRight(Empty: Stream[B])( (h, t) => f(h) append t )
 
   def headOption : Option[A] = foldRight(None: Option[A])( (h, t) => Some(h) )
 
-  def startsWith[B](s: Stream[B]): Boolean = sys.error("todo")
+  def startsWith[B](s: Stream[B]): Boolean = this zipAll(s) filter(!_._2.isEmpty) forAll( el => el._1 == el._2 )
+
+  def tails: Stream[Stream[A]] = unfold(this) {
+    case Empty => None
+    case strm => Some(strm, strm.drop(1))
+  } append Stream(Empty)
+
+  def tails2: Stream[Stream[A]] = scanRight(Empty : Stream[A]){ (strm, z) => strm append z }
 
   def map2[B](f : A => B): Stream[B] = unfold(this) {
     case Cons(h, t) => Some( (f(h()), t()) )
@@ -78,6 +90,7 @@ trait Stream[+A] {
     case (Empty, Empty) => None
   }
 }
+
 case object Empty extends Stream[Nothing]
 case class Cons[+A](h: () => A, t: () => Stream[A]) extends Stream[A]
 
