@@ -55,17 +55,57 @@ object RNG {
     (dd, rng2)
   }
 
-  def intDouble(rng: RNG): ((Int,Double), RNG) = ???
+  def double2(rng: RNG): (Double, RNG) = {
+    map[Int, Double](nonNegativeInt)(i => if(i==Int.MaxValue){(Int.MaxValue-1).toDouble/Int.MaxValue}else{i.toDouble/Int.MaxValue})(rng)
+  }
 
-  def doubleInt(rng: RNG): ((Double,Int), RNG) = ???
+  def intDouble(rng: RNG): ((Int,Double), RNG) = {
+    val (nnInt, rng2) = nonNegativeInt(rng)
+    val (dd, rng3) = double(rng2)
+    ((nnInt, dd), rng3)
+  }
 
-  def double3(rng: RNG): ((Double,Double,Double), RNG) = ???
+  def doubleInt(rng: RNG): ((Double,Int), RNG) = {
+    val ((nnInt, dd), newRng) = intDouble(rng)
+    ((dd, nnInt), newRng)
+  }
 
-  def ints(count: Int)(rng: RNG): (List[Int], RNG) = ???
+  def double3(rng: RNG): ((Double,Double,Double), RNG) = {
+    val (dd1, rng2) = double(rng)
+    val (dd2, rng3) = double(rng2)
+    val (dd3, rng4) = double(rng3)
+    ((dd1, dd2, dd3), rng4)
+  }
 
-  def map2[A,B,C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] = ???
+  def ints(count: Int)(rng: RNG): (List[Int], RNG) = {
+    def internal(the_count : Int, the_rng : RNG, the_ints : List[Int]) : (List[Int], RNG) = if(the_count<=0){
+      (the_ints, the_rng)
+    }
+    else {
+      val (nnInt, newRng) = nonNegativeInt(the_rng)
+      internal(the_count-1, newRng, nnInt :: the_ints)
+    }
+    internal(count, rng, List())
+  }
 
-  def sequence[A](fs: List[Rand[A]]): Rand[List[A]] = ???
+  def map2[A,B,C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] = rng => {
+    val (resA, newRng01) = ra(rng)
+    val (resB, newRng02) = rb(newRng01)
+    (f(resA, resB), newRng02)
+  }
+
+  def sequence[A](fs: List[Rand[A]]): Rand[List[A]] = {
+    def internal(the_rands : List[Rand[A]], the_as: List[A], the_latest_rng: RNG): (List[A],RNG) = the_rands match {
+      case Nil => (the_as, the_latest_rng)
+      case head::tail => {
+        val (a_new_a, a_new_rng) = head(the_latest_rng)
+        internal(tail, a_new_a :: the_as, a_new_rng)
+      }
+    }
+    rng => internal(fs, List(), rng)
+  }
+
+  def ints2(count: Int)(rng: RNG): (List[Int], RNG) = sequence(List.fill(count)(RNG.int))(rng)
 
   def flatMap[A,B](f: Rand[A])(g: A => Rand[B]): Rand[B] = ???
 }
