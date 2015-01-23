@@ -24,11 +24,11 @@ object RNG {
   def unit[A](a: A): Rand[A] =
     rng => (a, rng)
 
-  def map[A,B](s: Rand[A])(f: A => B): Rand[B] =
-    rng => {
-      val (a, rng2) = s(rng)
-      (f(a), rng2)
-    }
+//  def map[A,B](s: Rand[A])(f: A => B): Rand[B] =
+//    rng => {
+//      val (a, rng2) = s(rng)
+//      (f(a), rng2)
+//    }
 
   def nonNegativeInt(rng: RNG): (Int, RNG) = {
     val (nnInt, rng2) = rng.nextInt
@@ -88,11 +88,11 @@ object RNG {
     internal(count, rng, List())
   }
 
-  def map2[A,B,C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] = rng => {
-    val (resA, newRng01) = ra(rng)
-    val (resB, newRng02) = rb(newRng01)
-    (f(resA, resB), newRng02)
-  }
+//  def map2[A,B,C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] = rng => {
+//    val (resA, newRng01) = ra(rng)
+//    val (resB, newRng02) = rb(newRng01)
+//    (f(resA, resB), newRng02)
+//  }
 
   def sequence[A](fs: List[Rand[A]]): Rand[List[A]] = {
     def internal(the_rands : List[Rand[A]], the_as: List[A], the_latest_rng: RNG): (List[A],RNG) = the_rands match {
@@ -107,7 +107,31 @@ object RNG {
 
   def ints2(count: Int)(rng: RNG): (List[Int], RNG) = sequence(List.fill(count)(RNG.int))(rng)
 
-  def flatMap[A,B](f: Rand[A])(g: A => Rand[B]): Rand[B] = ???
+  def flatMap[A,B](f: Rand[A])(g: A => Rand[B]): Rand[B] = rng => {
+    val (a, rng2) = f(rng)
+    g(a)(rng2)
+  }
+
+  def map[A,B](s: Rand[A])(f: A => B): Rand[B] = flatMap(s){ a =>
+    rng => (f(a), rng)
+  }
+
+  def map2[A,B,C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] = flatMap(ra) { a =>
+    map(rb){ b => f(a, b) }
+  }
+
+  def nonNegativeLessThan(n : Int) : Rand[Int] =
+    flatMap(nonNegativeInt){ i =>
+      val mod = i % n
+      if (i + (n-1) - mod >= 0) {
+        rng => (mod, rng)
+      }
+      else {
+        nonNegativeLessThan(n)
+      }
+    }
+
+
 }
 
 case class State[S,+A](run: S => (A, S)) {
