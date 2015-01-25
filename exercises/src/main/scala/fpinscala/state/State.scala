@@ -113,7 +113,8 @@ object RNG {
   }
 
   def map[A,B](s: Rand[A])(f: A => B): Rand[B] = flatMap(s){ a =>
-    rng => (f(a), rng)
+    //rng => (f(a), rng)
+    unit(f(a))
   }
 
   def map2[A,B,C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] = flatMap(ra) { a =>
@@ -124,23 +125,37 @@ object RNG {
     flatMap(nonNegativeInt){ i =>
       val mod = i % n
       if (i + (n-1) - mod >= 0) {
-        rng => (mod, rng)
+        //rng => (mod, rng)
+        unit(mod)
       }
       else {
         nonNegativeLessThan(n)
       }
     }
 
-
 }
 
+//def sequence[A](fs: List[Rand[A]]): Rand[List[A]] = {
+//  def internal(the_rands : List[Rand[A]], the_as: List[A], the_latest_rng: RNG): (List[A],RNG) = the_rands match {
+//    case Nil => (the_as, the_latest_rng)
+//    case head::tail => {
+//      val (a_new_a, a_new_rng) = head(the_latest_rng)
+//      internal(tail, a_new_a :: the_as, a_new_rng)
+//    }
+//  }
+//  rng => internal(fs, List(), rng)
+//}
+
 case class State[S,+A](run: S => (A, S)) {
-  def map[B](f: A => B): State[S, B] =
-    sys.error("todo")
-  def map2[B,C](sb: State[S, B])(f: (A, B) => C): State[S, C] =
-    sys.error("todo")
-  def flatMap[B](f: A => State[S, B]): State[S, B] =
-    sys.error("todo")
+  def map[B](f: A => B): State[S, B] = flatMap { a => State.unit(f(a)) }
+  def map2[B,C](sb: State[S, B])(f: (A, B) => C): State[S, C] = flatMap { a => sb.map( b => f(a, b)) }
+  def flatMap[B](f: A => State[S, B]): State[S, B] = {
+    State(s => {
+        val (a01, s01) = run(s)
+        f(a01).run(s01)
+      }
+    )
+  }
 }
 
 sealed trait Input
@@ -151,5 +166,39 @@ case class Machine(locked: Boolean, candies: Int, coins: Int)
 
 object State {
   type Rand[A] = State[RNG, A]
-  def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = ???
+
+  def unit[S, A](a: A): State[S, A] = State(s => (a, s))
+
+  def sequence[S, A](sas: List[State[S, A]]): State[S, List[A]] = {
+    def internal(the_sas: List[State[S, A]], the_as : List[A], the_s : S) : (List[A],S) = the_sas match {
+      case Nil => (the_as.reverse, the_s)
+      case head::tail => {
+        val (a01, s01) = head.run(the_s)
+        internal(tail, a01 :: the_as, s01)
+      }
+    }
+    State( s => internal(sas, List(), s))
+  }
+
+  def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = {
+    def internal(the_inputs : List[Input], the_machine : Machine) : ((Int, Int), Machine) = the_inputs match {
+      case Nil => ((the_machine.coins, the_machine.candies), the_machine)
+      case head::tail => head match {
+        case Coin => if (the_machine.locked && the_machine.candies>0){
+          internal(tail, the_machine.copy(locked=false,coins=the_machine.coins+1))
+        } else {
+          internal(tail, the_machine.copy(coins=the_machine.coins+1))
+        }
+        case Turn => if (!the_machine.locked && the_machine.candies>0) {
+          internal(tail, the_machine.copy(locked=true,candies=the_machine.candies-1))
+        } else {
+          internal(tail, the_machine)
+        }
+      }
+    }
+    val f =  {
+      m: Machine => internal(inputs, m)
+    }
+    State(f)
+  }
 }
