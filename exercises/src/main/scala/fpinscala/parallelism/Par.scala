@@ -28,10 +28,27 @@ object Par {
       def call = a(es).get
     })
 
+  def lazyUnit[A](a: => A): Par[A] = fork(unit(a))
+
   def map[A,B](pa: Par[A])(f: A => B): Par[B] = 
     map2(pa, unit(()))((a,_) => f(a))
 
+  def asyncF[A,B](f : A => B) : A => Par[B] = a => lazyUnit(f(a))
+
   def sortPar(parList: Par[List[Int]]) = map(parList)(_.sorted)
+
+  def sequence[A](ps: List[Par[A]]): Par[List[A]] = {
+    def internal(the_ps : List[Par[A]], the_aggr : Par[List[A]]) : Par[List[A]] = the_ps match {
+      case Nil => the_aggr
+      case head::tail => internal(tail, map2(head, the_aggr)((a, l) => a::l))
+    }
+    internal(ps, lazyUnit(List[A]()))
+  }
+
+  def parFilter[A](as: List[A])(f: A => Boolean): Par[List[A]] = fork {
+    val pars : List[Par[List[A]]] = as.map{asyncF( a => if(f(a)){List(a)}else{List()})}
+    map(sequence(pars))(_.flatten)
+  }
 
   def equal[A](e: ExecutorService)(p: Par[A], p2: Par[A]): Boolean = 
     p(e).get == p2(e).get
@@ -43,6 +60,15 @@ object Par {
     es => 
       if (run(es)(cond).get) t(es) // Notice we are blocking on the result of `cond`.
       else f(es)
+
+  def choiceN[A](n: Par[Int])(choices: List[Par[A]]): Par[A] =
+    es => choices(run(es)(n).get)(es)
+
+  def choiceViaChoiceN[A](cond: Par[Boolean])(t: Par[A], f: Par[A]) : Par[A] = {
+    val condInt = map(cond)(b => if(b){0}else{1})
+    val choices = List(t, f)
+    choiceN(condInt)(choices)
+  }
 
   /* Gives us infix syntax for `Par`. */
   implicit def toParOps[A](p: Par[A]): ParOps[A] = new ParOps(p)
