@@ -1,4 +1,4 @@
-![Build status](https://travis-ci.org/fpinscala/fpinscala.svg?branch=master)
+[![Build status](https://travis-ci.org/fpinscala/fpinscala.svg?branch=master)](https://travis-ci.org/fpinscala/fpinscala)
 
 This repository contains exercises, hints, and answers for the book [Functional Programming in Scala](http://manning.com/bjarnason/). Along with the book itself, it's the closest you'll get to having your own private functional programming tutor without actually having one.
 
@@ -29,7 +29,7 @@ To build the code for the first time, if on windows:
 
     $ .\sbt.cmd
 
-If on mac/linux:
+If on mac/linux, first make sure you have not checked out the code onto an encrypted file system, otherwise you will get compile errors regarding too long file names (one solution is to put the fpinscala repo on a unencrypted usb key, and symlink it into your preferred code location).
 
     $ chmod a+x ./sbt
     $ ./sbt
@@ -48,6 +48,11 @@ to get a Scala REPL with access to your exercises, and
     > run
 
 To get a menu of possible main methods to execute.
+
+To create project files for the eclipse IDE you can install the [sbteclipse](https://github.com/typesafehub/sbteclipse) [sbt](http://scala-sbt.org) plugin.
+This makes a new command available in [sbt](http://scala-sbt.org):
+
+    > eclipse
 
 All code in this repository is [MIT-licensed](http://opensource.org/licenses/mit-license.php). See the LICENSE file for details.
 

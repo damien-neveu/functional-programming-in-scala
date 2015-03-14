@@ -8,3 +8,6 @@ project.vim
 *.old
 .idea
 fpinscala.iml
+.project
+.classpath
+.metadata/
