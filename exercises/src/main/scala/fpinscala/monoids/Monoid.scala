@@ -67,19 +67,35 @@ object Monoid {
   def trimMonoid(s: String): Monoid[String] = sys.error("todo")
 
   def concatenate[A](as: List[A], m: Monoid[A]): A =
-    sys.error("todo")
+    as.foldLeft(m.zero)(m.op)
 
   def foldMap[A, B](as: List[A], m: Monoid[B])(f: A => B): B =
-    sys.error("todo")
+    concatenate(as.map(f), m)
 
-  def foldRight[A, B](as: List[A])(z: B)(f: (A, B) => B): B =
-    sys.error("todo")
+  def foldRight[A, B](as: List[A])(z: B)(f: (A, B) => B): B = {
+    val xxx = foldMap(as, new Monoid[B => B] {
+      override def op(b1: B => B, b2: B => B): B => B = b => b1(b2(b))
+      override def zero: B => B = identity
+    })(f.curried)
+    xxx(z)
+  }
 
-  def foldLeft[A, B](as: List[A])(z: B)(f: (B, A) => B): B =
-    sys.error("todo")
+  def foldLeft[A, B](as: List[A])(z: B)(f: (B, A) => B): B = {
+    val xxx = foldMap(as, new Monoid[B => B] {
+      override def op(b1: B => B, b2: B => B): B => B = b => b2(b1(b))
+      override def zero: B => B = identity
+    })(a => b => f(b, a))
+    xxx(z)
+  }
 
   def foldMapV[A, B](as: IndexedSeq[A], m: Monoid[B])(f: A => B): B =
-    sys.error("todo")
+    if (as.length <= 1) {
+      foldMap(as.toList, m)(f)
+    }
+    else {
+      val (as1, as2) = as.splitAt(as.length / 2)
+      m.op(foldMapV(as1, m)(f), foldMapV(as2, m)(f))
+    }
 
   def ordered(ints: IndexedSeq[Int]): Boolean =
     sys.error("todo")
@@ -94,7 +110,7 @@ object Monoid {
   def parFoldMap[A,B](v: IndexedSeq[A], m: Monoid[B])(f: A => B): Par[B] = 
     sys.error("todo") 
 
-  val wcMonoid: Monoid[WC] = sys.error("todo")
+  lazy val wcMonoid: Monoid[WC] = sys.error("todo")
 
   def count(s: String): Int = sys.error("todo")
 
