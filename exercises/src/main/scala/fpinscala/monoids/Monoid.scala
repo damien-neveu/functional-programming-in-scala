@@ -98,7 +98,19 @@ object Monoid {
     }
 
   def ordered(ints: IndexedSeq[Int]): Boolean =
-    sys.error("todo")
+    if (ints.isEmpty) {
+      false
+    }
+    else {
+      foldMap(ints.toList, new Monoid[Option[Int]] {
+        override def op(o1: Option[Int], o2: Option[Int]): Option[Int] =
+          (o1, o2) match {
+            case (Some(acc), Some(v)) if v >= acc => Some(v)
+            case _ => None
+          }
+        override def zero: Option[Int] = Some(ints(0))
+      })((i: Int) => Some(i)) isDefined
+    }
 
   sealed trait WC
   case class Stub(chars: String) extends WC
