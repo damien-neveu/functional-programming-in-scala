@@ -22,4 +22,9 @@ class MonoidSpec extends FlatSpec with Matchers {
     ordered(unorderedSeq) shouldBe false
   }
 
+  "count" should "count the number of words within a String" in {
+    val str = "lorem  ipsum dolor sit amet, "
+    count(str) shouldBe 5
+  }
+
 }

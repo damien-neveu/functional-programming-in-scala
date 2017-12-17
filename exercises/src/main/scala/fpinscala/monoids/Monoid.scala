@@ -109,7 +109,7 @@ object Monoid {
             case _ => None
           }
         override def zero: Option[Int] = Some(ints(0))
-      })((i: Int) => Some(i)) isDefined
+      })((i: Int) => Some(i)).isDefined
     }
 
   sealed trait WC
@@ -120,11 +120,38 @@ object Monoid {
     sys.error("todo")
 
   def parFoldMap[A,B](v: IndexedSeq[A], m: Monoid[B])(f: A => B): Par[B] = 
-    sys.error("todo") 
+    sys.error("todo")
 
-  lazy val wcMonoid: Monoid[WC] = sys.error("todo")
+  lazy val wcMonoid: Monoid[WC] = new Monoid[WC] {
+    override def op(wc1: WC, wc2: WC): WC = (wc1, wc2) match {
+      case (Stub(chars1), Stub(chars2)) => Stub(chars1+chars2)
+      case (Stub(chars1), Part(lstub2, words2, rstub2)) => Part(chars1+lstub2, words2, rstub2)
+      case (Part(lstub1, words1, rstub1), Stub(chars2)) => Part(lstub1, words1, rstub1+chars2)
+      case (Part(lstub1, words1, rstub1), Part(lstub2, words2, rstub2)) => Part(lstub1, words1+wordNum(rstub1+lstub2)+words2, rstub2)
+    }
+    override def zero: WC = Stub("")
+  }
 
-  def count(s: String): Int = sys.error("todo")
+  def count(s: String): Int = {
+    val wc = foldMapV(s.trim, wcMonoid)({
+      case ' ' => Part("", 0, "")
+      case c => Stub(c.toString)
+    })
+    wc match {
+      case Stub(str) =>
+        wordNum(str)
+      case Part(lstub, words, rstub) =>
+        wordNum(lstub) + words + wordNum(rstub)
+    }
+  }
+
+  private def wordNum(str: String): Int =
+    if(str.trim == "") {
+      0
+    }
+    else {
+      1
+    }
 
   def productMonoid[A,B](A: Monoid[A], B: Monoid[B]): Monoid[(A, B)] =
     sys.error("todo")
